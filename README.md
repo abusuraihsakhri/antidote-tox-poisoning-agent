@@ -1,107 +1,109 @@
-# Antidote Tox Poisoning Agent
+# Medical Toxicology Antidote Dosing & Poisoning Emergency Engine
 
-> **Domain:** Clinical Pharmacology & Precision Pharmacotherapy  
-> **Reference Guidelines & Standards:** `CPIC Guidelines & FDA Table of Pharmacogenomic Biomarkers`
+A pure Python clinical toxicology, emergency medicine, and critical care poison center decision support system implementing:
+- **Rumack-Matthew Nomogram for Acetaminophen (APAP) Toxicity:**
+  - Evaluates acute ingestions between 4 and 24 hours:
+    - Standard US 150-treatment line: $[\text{APAP}] = 150 \times 2^{-(t - 4) / 4}\text{ }\mu\text{g/mL}$
+    - High-risk 100-treatment line (chronic alcohol, malnutrition, CYP2E1 inducers): $[\text{APAP}] = 100 \times 2^{-(t - 4) / 4}\text{ }\mu\text{g/mL}$
+- **N-Acetylcysteine (NAC) Weight-Based Dosing Protocols:**
+  - Standard IV 3-Bag 21-hour regimen (150 mg/kg over 1h, 50 mg/kg over 4h, 100 mg/kg over 16h; capped at 100 kg).
+  - Modern IV 2-Bag 20-hour simplified regimen (200 mg/kg over 4h, 100 mg/kg over 16h).
+  - Oral 72-hour regimen (140 mg/kg loading, then 70 mg/kg every 4 hours for 17 maintenance doses).
+- **Opioid Reversal & Naloxone Titration Engine:**
+  - Titrates naloxone boluses to reverse respiratory depression ($\text{RR} \ge 10 - 12\text{ bpm}$) rather than complete mental status awakening to prevent acute precipitated withdrawal.
+  - High-dose titration logic for high-potency synthetic opioids (fentanyl, carfentanil).
+- **Cholinergic Toxicity (Organophosphates & Carbamates):**
+  - Doubling-dose Atropine protocol titrated until bronchial clearance ("dry lungs", heart rate $> 80\text{ bpm}$, $\text{SBP} > 80\text{ mmHg}$).
+  - Pralidoxime (2-PAM) dosing: $2\text{ g}$ IV loading dose over 30 min followed by $8 - 10\text{ mg/kg/h}$ infusion.
+- **Toxic Alcohol Ingestion (Methanol, Ethylene Glycol, Isopropanol):**
+  - Osmolal gap calculation and Fomepizole ($15\text{ mg/kg}$ loading, $10\text{ mg/kg}$ q12h) / emergent hemodialysis indication triggers.
+- **Toxidrome Pattern Classifier:**
+  - Classifies anticholinergic, cholinergic, sympathomimetic, opioid, sedative-hypnotic, and serotonergic syndromes based on vital signs, pupils, diaphoresis, and bowel activity.
+- **High-Throughput Batch Toxicology CSV Processing:** Ingests poison center exposure logs and emergency triage records.
 
-<div align="center">
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
-
-</div>
-
----
-
-## 📖 What It Does
-
-**Antidote Tox Poisoning Agent** is an advanced analytical and computational platform implementing Emergency Toxidrome Classifier & Weight-Based Antidote Doser.
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-### 🔬 Core Algorithmic & Evaluation Engines
-
-- **`ToxidromeType`** — dedicated module for toxidrome type evaluation and state verification.
-- **`RumackResult`** — dedicated module for rumack result evaluation and state verification.
-- **`NACProtocolPlan`** — dedicated module for n a c protocol plan evaluation and state verification.
-- **`NaloxonePlan`** — dedicated module for naloxone plan evaluation and state verification.
-- **`OrganophosphatePlan`** — dedicated module for organophosphate plan evaluation and state verification.
-- **`ToxicAlcoholPlan`** — dedicated module for toxic alcohol plan evaluation and state verification.
+Requires Python standard library only (zero external runtime dependencies).
 
 ---
 
-## 📐 Mathematical Formulation & Logic
+## Toxicology Antidote Reference Matrix
 
-```text
-  calculated_osmolarity: float
-  Calculate Rumack-Matthew nomogram risk line for acute acetaminophen ingestion.
-  Calculate exact weight-based N-Acetylcysteine (NAC) dosing.
-  Calculate Atropine doubling protocol and Pralidoxime (2-PAM) dosing.
-  Calculate Osmolal Gap, Anion Gap, and Fomepizole / Hemodialysis indications.
-```
+| Toxic Exposure | Primary Antidote | Dosing Protocol | Clinical Endpoint |
+|:---------------|:-----------------|:----------------|:------------------|
+| **Acetaminophen** | N-Acetylcysteine (NAC) | $300\text{ mg/kg}$ IV over 21h or $300\text{ mg/kg}$ IV over 20h | APAP $< 10\text{ }\mu\text{g/mL}$, normal ALT/AST, INR $\le 1.2$ |
+| **Opioids** | Naloxone | $0.04 - 0.4\text{ mg}$ IV initial ($2\text{ mg}$ if apneic) | Adequate ventilation ($\text{RR} \ge 12\text{ bpm}$) |
+| **Organophosphates** | Atropine + Pralidoxime | Atropine $2 - 5\text{ mg}$ IV (doubling q3-5min); 2-PAM $2\text{ g}$ IV | Tracheobronchial clearance, $\text{HR} > 80\text{ bpm}$ |
+| **Methanol / Ethylene Glycol** | Fomepizole | $15\text{ mg/kg}$ IV loading, then $10\text{ mg/kg}$ q12h $\times 4$ doses | Toxic alcohol $< 20\text{ mg/dL}$, normal acid-base |
+| **Cyanide** | Hydroxocobalamin | $5\text{ g}$ IV over 15 min (may repeat once) | Reversal of lactic acidosis & hemodynamic stability |
 
 ---
 
-## 💻 CLI Quickstart & Usage
+## Features
 
-### 1. Guided Interactive Mode
+- **Guidelines-Aligned Poison Control:** Built according to ACMT, AACT, and EAPCCT international recommendations.
+- **Nomogram Dynamic Mathematical Solver:** Logarithmic half-life interpolation across all sampling intervals (4 to 24 hours).
+- **Batch CSV Processing:** High-throughput batch triage for poison center case surveillance.
+
+---
+
+## Installation & Requirements
+
+- Python 3.10+ (tested on 3.10, 3.11, 3.12)
+- Zero external runtime dependencies. `pytest` is optional for running tests.
+
 ```bash
-python cli.py
+git clone https://github.com/abusuraihsakhri/antidote-tox-poisoning-agent.git
+cd antidote-tox-poisoning-agent
 ```
 
-### 2. Direct Parameterized Evaluation
+---
+
+## CLI Usage
+
+### 1. Acetaminophen Rumack-Matthew Nomogram
 ```bash
-python cli.py --- <value> --hours <value> --level <value> --high-risk <value>
+python cli.py apap --hours 6.0 --level 180.0 --json
 ```
 
-### Parameter Reference
-- `---`: Specifies input measurement or parameter value.
-- `--hours`: Specifies input measurement or parameter value.
-- `--level`: Specifies input measurement or parameter value.
-- `--high-risk`: Specifies input measurement or parameter value.
-- `--json`: Specifies input measurement or parameter value.
-- `--weight`: Specifies input measurement or parameter value.
-- `--regimen`: Specifies input measurement or parameter value.
-- `--rr`: Specifies input measurement or parameter value.
-- `--synthetic`: Specifies input measurement or parameter value.
-- `--apnea`: Specifies input measurement or parameter value.
+### 2. N-Acetylcysteine Weight-Based Protocol
+```bash
+python cli.py nac --weight 75.0 --regimen iv_3bag --json
+```
+
+### 3. Toxic Alcohol & Osmolal Gap Analysis
+```bash
+python cli.py toxic-alcohol --toxicant ethylene_glycol --weight 70.0 --measured-osm 330 --na 140 --glucose 100 --bun 15 --ph 7.20 --json
+```
+
+### 4. Batch CSV Processing
+```bash
+python cli.py batch --input sample.csv --output results.csv
+```
 
 ---
 
-## 🛡️ Security & Enterprise Architecture
+## Python API Quickstart
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+```python
+import antidote_tox_poisoning as atp
+
+# Acetaminophen nomogram
+res = atp.evaluate_rumack_matthew(hours_post_ingestion=6.0, apap_ug_ml=180.0)
+print(f"Treatment Line (150): {res.treatment_threshold_150} ug/mL")
+print(f"Treat with NAC: {res.treat_with_nac}")
+print(f"Risk Tier: {res.risk_tier}")
+
+# NAC dosing
+plan = atp.calculate_nac_protocol(weight_kg=75.0, regimen="iv_3bag")
+print(f"Total Dose: {plan.total_dose_mg} mg over {plan.total_duration_hours} hours")
+```
 
 ---
 
-## 🧪 Testing & Verification
+## Running Tests
 
-Run the automated test suite:
+Run the test suite using standard `unittest` or `pytest`:
 
 ```bash
 pytest -v
 ```
 
-Execute high-throughput batch simulation benchmarks:
-
-```bash
-python simulator.py --tasks 1000 --concurrency 8
-```
-
----
-
-## 🐳 Container Deployment
-
-```bash
-docker build -t antidote-tox-poisoning-agent .
-docker run -p 8000:8000 antidote-tox-poisoning-agent
-```

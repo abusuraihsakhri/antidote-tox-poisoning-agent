@@ -1,0 +1,4 @@
+patient_id,hours,level,high_risk
+PT-TOX-01,6.0,180.0,False
+PT-TOX-02,4.0,220.0,True
+PT-TOX-03,12.0,40.0,False

@@ -298,6 +298,49 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     subparsers = parser.add_subparsers(dest="command")
 
+def cmd_batch(args: argparse.Namespace) -> int:
+    import csv
+    with open(args.input, mode="r", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        fieldnames = list(reader.fieldnames or [])
+        rows = list(reader)
+
+    out_fields = fieldnames + ["treatment_threshold_150", "risk_tier", "treat_with_nac", "clinical_rationale"]
+    out_rows = []
+    for r in rows:
+        row_dict = dict(r)
+        try:
+            hrs = float(r.get("hours", 4.0))
+            lvl = float(r.get("level", 100.0))
+            hr_flag = str(r.get("high_risk", "false")).lower() in ("true", "1", "yes")
+            res = atp.evaluate_rumack_matthew(hours_post_ingestion=hrs, apap_ug_ml=lvl, high_risk_patient=hr_flag)
+            row_dict["treatment_threshold_150"] = res.treatment_threshold_150
+            row_dict["risk_tier"] = res.risk_tier
+            row_dict["treat_with_nac"] = res.treat_with_nac
+            row_dict["clinical_rationale"] = res.clinical_rationale
+        except Exception as ex:
+            row_dict["treatment_threshold_150"] = 0.0
+            row_dict["risk_tier"] = "ERROR"
+            row_dict["treat_with_nac"] = False
+            row_dict["clinical_rationale"] = str(ex)
+        out_rows.append(row_dict)
+
+    with open(args.output, mode="w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=out_fields)
+        writer.writeheader()
+        writer.writerows(out_rows)
+
+    print(f"Processed {len(out_rows)} cases -> {args.output}")
+    return 0
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="antidote-tox-poisoning-agent",
+        description="Clinical Toxicology Antidote Dosing & Poisoning Emergency Decision Support System",
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
     # apap
     p_apap = subparsers.add_parser("apap", help="Acetaminophen Rumack-Matthew nomogram evaluation")
     p_apap.add_argument("--hours", type=float, required=True, help="Hours post ingestion")
@@ -349,6 +392,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_tox.add_argument("--bowel-sounds", choices=["hypoactive", "hyperactive", "normal"], default="normal")
     p_tox.add_argument("--json", action="store_true", help="JSON output")
 
+    # batch
+    p_batch = subparsers.add_parser("batch", help="Batch process toxicology cases from CSV")
+    p_batch.add_argument("--input", "-i", required=True, help="Input CSV path")
+    p_batch.add_argument("--output", "-o", default="results.csv", help="Output CSV path")
+
     # interactive
     subparsers.add_parser("interactive", help="Interactive toxicology walkthrough")
 
@@ -366,6 +414,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         cmd_toxic_alcohol(args)
     elif args.command == "toxidrome":
         cmd_toxidrome(args)
+    elif args.command == "batch":
+        return cmd_batch(args)
     elif args.command == "interactive":
         cmd_interactive()
     else:
@@ -377,3 +427,4 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

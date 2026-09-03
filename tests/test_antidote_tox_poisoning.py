@@ -255,15 +255,26 @@ class TestAntidoteToxPoisoning(unittest.TestCase):
         self.assertEqual(plan2.total_duration_hours, 20)
 
     def test_cli_execution_smoke(self):
-        import subprocess
-        result = subprocess.run(
-            ["python", "cli.py", "apap", "--hours", "4.0", "--level", "160", "--json"],
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("Above 150-Line", result.stdout)
+        from cli import main
+        import io
+        from unittest.mock import patch
+        with patch("sys.stdout", new=io.StringIO()) as fake_out:
+            code = main(["apap", "--hours", "4.0", "--level", "160", "--json"])
+            self.assertEqual(code, 0)
+            self.assertIn("Above 150-Line", fake_out.getvalue())
+
+    def test_cli_batch(self):
+        from cli import main
+        import os
+        import tempfile
+        sample_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sample.csv")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_file = os.path.join(tmpdir, "out_batch.csv")
+            code = main(["batch", "-i", sample_path, "-o", out_file])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(out_file))
 
 
 if __name__ == "__main__":
     unittest.main()
+
